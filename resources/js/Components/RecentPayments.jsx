@@ -71,6 +71,7 @@ const RecentPayments = () => {
     <Card className="border-0 shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
+          <CardTitle className="text-lg font-semibold text-gray-900">Recent Payments</CardTitle>
           <p className="text-sm text-gray-500">Latest rent collections</p>
         </div>
         <Button variant="outline" size="sm">View All</Button>

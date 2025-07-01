@@ -15,12 +15,6 @@ const PaymentChart = () => {
   return (
     <Card className="border-0 shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900">
-          Monthly Collections
-        </CardTitle>
-        <p className="text-sm text-gray-500">
-          Collection performance vs targets
-        </p>
       </CardHeader>
       <CardContent>
         <div className="w-full" style={{ height: 300 }}>

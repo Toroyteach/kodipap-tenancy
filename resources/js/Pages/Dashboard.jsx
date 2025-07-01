@@ -92,12 +92,6 @@ export default function Dashboard() {
                         </CardContent>
                     </Card>
                     <Card className="lg:col-span-3">
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle>Recent Payments</CardTitle>
-                                <Button variant="outline" size="sm">View All</Button>
-                            </div>
-                        </CardHeader>
                         <CardContent>
                             <RecentPayments />
                         </CardContent>
