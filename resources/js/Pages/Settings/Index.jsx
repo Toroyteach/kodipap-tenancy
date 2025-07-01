@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Bell, CreditCard, Home, Save, Shield } from 'lucide-react';
+import { Bell, CreditCard, Home, Save, Shield, Send, XCircle } from 'lucide-react';
 
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/Components/ui/card';
@@ -8,12 +8,9 @@ import { Label } from '@/Components/ui/label';
 import { Switch } from '@/Components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/Components/ui/table';
 import { Badge } from '@/Components/ui/badge';
+import AppLayout from '@/Layouts/AppLayout';
 
-export default function SettingsPage({ settings = {} }) {
-    const notifications = [
-        { id: 1, message: 'Rent reminder sent', status: 'delivered', created_at: '2025-06-30 10:00 AM' },
-        { id: 2, message: 'Overdue payment alert', status: 'failed', created_at: '2025-06-29 05:30 PM' },
-    ];
+export default function SettingsPage({ settings = {}, notifications = [] }) {
     const appData = useForm({ app_name: settings.app_name || 'Kodipap', support_email: settings.support_email || '', mpesa_enabled: settings.mpesa_enabled || false });
     const propertyData = useForm({ name: settings.property_name || '', address: settings.property_address || '', total_units: settings.total_units || 0 });
     const notificationData = useForm({ payment_notifications: settings.payment_notifications || false, overdue_reminders: settings.overdue_reminders || false, sms_notifications: settings.sms_notifications || false, email_notifications: settings.email_notifications || false });
@@ -23,6 +20,19 @@ export default function SettingsPage({ settings = {} }) {
     const handleSecuritySubmit = (e) => {
         e.preventDefault();
         securityData.post(route('password.update'), { preserveScroll: true, onSuccess: () => securityData.reset() });
+    };
+
+    const getStatusBadgeVariant = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'sent':
+                return 'default';
+            case 'failed':
+                return 'destructive';
+            case 'pending':
+                return 'secondary';
+            default:
+                return 'outline';
+        }
     };
 
     const FormCard = ({ title, description, form, onSubmit, children, icon: Icon }) => (
@@ -51,9 +61,9 @@ export default function SettingsPage({ settings = {} }) {
     );
 
     return (
-        <>
+        <AppLayout>
             <Head title="Settings" />
-            <div className="p-4 sm:p-6 lg:p-8">
+            <div className="">
                 <div className="mb-6"><h1 className="text-2xl font-bold">Settings</h1><p className="text-muted-foreground">Manage your settings.</p></div>
                 <div className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -93,28 +103,41 @@ export default function SettingsPage({ settings = {} }) {
                             <Table>
                                 <TableHeader><TableRow><TableHead>Message</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {notifications.map((notification) => (
-                                        <TableRow key={notification.id}>
-                                            <TableCell className="font-medium">{notification.message}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={notification.status === 'failed' ? 'destructive' : 'outline'}>
-                                                    {notification.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>{notification.created_at}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="outline" size="sm">
-                                                    Resend
-                                                </Button>
+                                    {notifications.length > 0 ? (
+                                        notifications.map((notification) => (
+                                            <TableRow key={notification.id}>
+                                                <TableCell className="font-medium">{notification.message}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusBadgeVariant(notification.status)} className="capitalize">
+                                                        {notification.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>{new Date(notification.created_at).toLocaleString()}</TableCell>
+                                                <TableCell className="text-right space-x-2">
+                                                    <Button variant="outline" size="sm" disabled={notification.status === 'Pending'}>
+                                                        <Send className="h-4 w-4 mr-1" />
+                                                        Resend
+                                                    </Button>
+                                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600" disabled={notification.status !== 'Pending'}>
+                                                        <XCircle className="h-4 w-4 mr-1" />
+                                                        Cancel
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan="4" className="text-center text-muted-foreground py-4">
+                                                No notifications found.
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
                     </Card>
                 </div>
             </div>
-        </>
+        </AppLayout>
     );
 }

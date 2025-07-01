@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { 
     Search, 
     Plus, 
@@ -19,58 +19,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Badge } from '@/Components/ui/badge';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog';
+import { Label } from '@/Components/ui/label';
+import { Textarea } from '@/Components/ui/textarea';
 
-// Sample data - replace with actual data from your backend
-const tenants = [
-    {
-        id: '1',
-        name: 'Mary Wanjiku',
-        unit: 'A-101',
-        phone: '+254 712 345 678',
-        email: 'mary.wanjiku@email.com',
-        rent: 25000,
-        status: 'active',
-        lastPayment: '2024-01-15',
-        dueDate: '2024-02-01',
-        balance: 0
-    },
-    {
-        id: '2',
-        name: 'James Mwangi',
-        unit: 'B-205',
-        phone: '+254 723 456 789',
-        email: 'james.mwangi@email.com',
-        rent: 30000,
-        status: 'active',
-        lastPayment: '2024-01-15',
-        dueDate: '2024-02-01',
-        balance: 0
-    },
-    {
-        id: '3',
-        name: 'Grace Akinyi',
-        unit: 'C-302',
-        phone: '+254 734 567 890',
-        email: 'grace.akinyi@email.com',
-        rent: 22000,
-        status: 'overdue',
-        lastPayment: '2023-12-15',
-        dueDate: '2024-01-01',
-        balance: 22000
-    },
-    {
-        id: '4',
-        name: 'Peter Otieno',
-        unit: 'A-104',
-        phone: '+254 745 678 901',
-        email: 'peter.otieno@email.com',
-        rent: 28000,
-        status: 'active',
-        lastPayment: '2024-01-14',
-        dueDate: '2024-02-01',
-        balance: 0
-    }
-];
+
 
 const getStatusVariant = (status) => {
     switch (status) {
@@ -90,15 +44,45 @@ const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', options);
 };
 
-export default function TenantsIndex() {
-    const [searchTerm, setSearchTerm] = useState('');
-    
-    const filteredTenants = tenants.filter(tenant => 
-        tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tenant.phone.includes(searchTerm) ||
-        tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tenant.unit.toLowerCase().includes(searchTerm.toLowerCase())
+const debounce = (func, delay) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), delay);
+    };
+};
+
+export default function TenantsIndex({ tenants, filters }) {
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [selectedTenants, setSelectedTenants] = useState([]);
+    const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+
+    const debouncedSearch = useCallback(
+        debounce(value => {
+            router.get(route('tenants.index'), { search: value }, { preserveState: true, replace: true });
+        }, 300), // 300ms delay
+        []
     );
+
+    useEffect(() => {
+        debouncedSearch(searchTerm);
+    }, [searchTerm, debouncedSearch]);
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedTenants(tenants.map(t => t.id));
+        } else {
+            setSelectedTenants([]);
+        }
+    };
+
+    const handleSelectTenant = (tenantId, checked) => {
+        if (checked) {
+            setSelectedTenants(prev => [...prev, tenantId]);
+        } else {
+            setSelectedTenants(prev => prev.filter(id => id !== tenantId));
+        }
+    };
 
     return (
         <div className="space-y-6 p-6">
@@ -115,10 +99,44 @@ export default function TenantsIndex() {
                 </Button>
             </div>
 
+            <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Send Bulk Message</DialogTitle>
+                        <DialogDescription>
+                            You are about to send a message to {selectedTenants.length} tenant(s).
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="message">Message</Label>
+                            <Textarea id="message" placeholder="Type your message here." rows={4} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={() => {
+                            // Handle message sending logic here
+                            console.log('Sending message to:', selectedTenants);
+                            setIsMessageDialogOpen(false);
+                            setSelectedTenants([]);
+                        }}>Send Message</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <Card className="border-0 shadow-sm">
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-semibold">All Tenants</CardTitle>
+                        <div className="flex items-center gap-4">
+                            <CardTitle className="text-lg font-semibold">All Tenants</CardTitle>
+                            {selectedTenants.length > 0 && (
+                                <Button onClick={() => setIsMessageDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 h-9">
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    Send Message ({selectedTenants.length})
+                                </Button>
+                            )}
+                        </div>
                         <div className="flex items-center gap-4">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -143,6 +161,13 @@ export default function TenantsIndex() {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
+                                    <th scope="col" className="p-4">
+                                        <Checkbox 
+                                            id="select-all"
+                                            onCheckedChange={handleSelectAll}
+                                            checked={selectedTenants.length === tenants.length && tenants.length > 0}
+                                        />
+                                    </th>
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Tenant
                                     </th>
@@ -167,18 +192,25 @@ export default function TenantsIndex() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {filteredTenants.map((tenant) => (
-                                    <tr key={tenant.id} className="hover:bg-gray-50">
+                                {tenants.map((tenant) => (
+                                    <tr key={tenant.id} className={`hover:bg-gray-50 ${selectedTenants.includes(tenant.id) ? 'bg-blue-50' : ''}`}>
+                                        <td className="p-4">
+                                            <Checkbox 
+                                                id={`select-${tenant.id}`}
+                                                onCheckedChange={(checked) => handleSelectTenant(tenant.id, checked)}
+                                                checked={selectedTenants.includes(tenant.id)}
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium">
+                                            <Link href={route('tenants.show', tenant.id)} className="flex items-center group">
+                                                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium group-hover:bg-green-200 transition-colors">
                                                     {tenant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900">{tenant.name}</div>
+                                                    <div className="text-sm font-medium text-gray-900 group-hover:text-green-600 transition-colors">{tenant.name}</div>
                                                     <div className="text-sm text-gray-500">{tenant.phone}</div>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
@@ -187,7 +219,7 @@ export default function TenantsIndex() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">KSH {tenant.rent.toLocaleString()}</div>
+                                            <div className="text-sm text-gray-900">KSH {tenant.rent?.toLocaleString()}</div>
                                             <div className="text-xs text-gray-500">Monthly</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -196,7 +228,7 @@ export default function TenantsIndex() {
                                                 {tenant.balance === 0 ? (
                                                     <span className="text-green-600">Paid in full</span>
                                                 ) : (
-                                                    <span className="text-red-600">Balance: KSH {tenant.balance.toLocaleString()}</span>
+                                                    <span className="text-red-600">Balance: KSH {tenant.balance?.toLocaleString()}</span>
                                                 )}
                                             </div>
                                         </td>
@@ -222,7 +254,7 @@ export default function TenantsIndex() {
                         </table>
                     </div>
                     
-                    {filteredTenants.length === 0 && (
+                    {tenants.length === 0 && (
                         <div className="text-center py-12">
                             <div className="mx-auto h-12 w-12 text-gray-400">
                                 <User className="h-full w-full" />

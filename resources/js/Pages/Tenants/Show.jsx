@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
 import { User, Home, FileText, MessageSquare } from 'lucide-react';
+import AppLayout from '@/Layouts/AppLayout';
+import TenantSwitcher from '@/Components/TenantSwitcher';
 
-export default function TenantShowPage({ tenant }) {
+export default function TenantShowPage({ tenant, allTenants }) {
     const [isMessageModalOpen, setMessageModalOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -31,22 +33,25 @@ export default function TenantShowPage({ tenant }) {
     // Render a message if the tenant data is not available.
     if (!tenant) {
         return (
-            <>
+            <AppLayout>
                 <Head title="Tenant Not Found" />
                 <div className="p-4 sm:p-6 lg:p-8">
                     <h1 className="text-2xl font-bold">Tenant Not Found</h1>
                     <p>The requested tenant could not be found.</p>
                 </div>
-            </>
+            </AppLayout>
         );
     }
 
     return (
-        <>
+        <AppLayout>
             <Head title={`Tenant - ${tenant.name}`} />
-            <div className="p-4 sm:p-6 lg:p-8">
-                <div className="flex items-center justify-between mb-6">
-                    <h1 className="text-2xl font-bold">{tenant.name || 'Tenant Details'}</h1>
+            <div className="">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl font-bold truncate">{tenant.name || 'Tenant Details'}</h1>
+                        <TenantSwitcher tenants={allTenants} currentTenantId={tenant.id} />
+                    </div>
                     <Dialog open={isMessageModalOpen} onOpenChange={setMessageModalOpen}>
                         <DialogTrigger asChild>
                             <Button><MessageSquare className="mr-2 h-4 w-4" /> Send Message</Button>
@@ -152,6 +157,6 @@ export default function TenantShowPage({ tenant }) {
                     </CardContent>
                 </Card>
             </div>
-        </>
+        </AppLayout>
     );
 }
