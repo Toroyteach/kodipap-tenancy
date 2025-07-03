@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return Inertia::render('Welcome', [
+        'auth' => ['user' => auth()->user()],
+    ]);
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -43,13 +45,14 @@ Route::middleware('auth')->group(function () {
         Route::get('rental-schedule', 'downloadRentalSchedule')->name('rental-schedule');
         Route::get('tax-report', 'downloadTaxReport')->name('tax-report');
     });
-    
-    //Settings
+
+    // Settings
     Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'update')->name('update');
-        Route::post('send-bulk-message', 'sendBulkMessage')->name('send-bulk-message');
-        Route::post('upload-bulk', 'uploadBulkData')->name('upload-bulk');
+        Route::post('/app', 'updateAppSettings')->name('app.update');
+        Route::post('/property', 'updatePropertySettings')->name('property.update');
+        Route::post('/notifications', 'updateNotificationSettings')->name('notifications.update');
+        Route::post('/payment', 'updatePaymentSettings')->name('payment.update');
     });
 });
 

@@ -25,17 +25,74 @@ class SettingController extends Controller
         }
     }
 
-    public function update(Request $request)
-    {
-        try {
-            foreach ($request->all() as $key => $value) {
-                Setting::updateOrCreate(['key' => $key], ['value' => $value]);
-            }
 
-            return redirect()->back()->with('success', 'Settings updated successfully.');
-        } catch (\Throwable $e) {
-            Log::error('Failed to update settings: ' . $e->getMessage());
-            return response()->json(['error' => 'Unable to update settings.'], 500);
+    public function updateAppSettings(Request $request)
+    {
+        $data = $request->validate([
+            'app_name' => 'required|string',
+            'app_url' => 'required|url',
+            'support_email' => 'required|email',
+            'currency' => 'required|string',
+            'timezone' => 'required|string',
+        ]);
+
+        $this->saveSettings($data);
+        return back()->with('success', 'App settings updated.');
+    }
+
+    public function updatePropertySettings(Request $request)
+    {
+        $data = $request->validate([
+            'property_name' => 'required|string',
+            'property_address' => 'required|string',
+            'property_units' => 'required|integer',
+            'bank_account' => 'required|string',
+            'default_rent_due_day' => 'required|integer|min:1|max:31',
+        ]);
+
+        $this->saveSettings($data);
+        return back()->with('success', 'Property settings updated.');
+    }
+
+    public function updateNotificationSettings(Request $request)
+    {
+        $data = $request->validate([
+            'enable_auto_reconcile' => 'required|boolean',
+            'enable_email_notifications' => 'required|boolean',
+            'enable_sms_notifications' => 'required|boolean',
+            'sms_due_reminder' => 'required|string',
+            'sms_payment_thankyou' => 'required|string',
+            'sms_partial_payment' => 'required|string',
+            'sms_overdue_notice' => 'required|string',
+            'sms_welcome_tenant' => 'required|string',
+        ]);
+
+        $this->saveSettings($data);
+        return back()->with('success', 'Notification settings updated.');
+    }
+
+    public function updatePaymentSettings(Request $request)
+    {
+        $data = $request->validate([
+            'mpesa.short_code' => 'required|string',
+            'mpesa.passkey' => 'required|string',
+            'mpesa.consumer_key' => 'required|string',
+            'mpesa.consumer_secret' => 'required|string',
+            'mpesa.base_url' => 'required|url',
+            'mpesa.initiator' => 'required|string',
+            'mpesa.security_credential' => 'required|string',
+            'mpesa.timeout_url' => 'required|url',
+            'mpesa.result_url' => 'required|url',
+        ]);
+
+        $this->saveSettings($data);
+        return back()->with('success', 'Payment settings updated.');
+    }
+
+    private function saveSettings(array $settings)
+    {
+        foreach ($settings as $key => $value) {
+            Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
     }
 
