@@ -30,7 +30,10 @@ export default function TenantShowPage({ tenant, allTenants = [] }) {
 
     const handleSendMessage = (e) => {
         e.preventDefault();
-        post(route('tenants.message.send', tenant.id), {
+        post(route('notifications.send.custom'), {
+            user_id: tenant.id,
+            message: data.message,
+        }, {
             preserveScroll: true,
             onSuccess: () => {
                 setMessageModalOpen(false);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\NotificationLogs;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -17,8 +18,10 @@ class SettingController extends Controller
     {
         try {
             $settings = Setting::all()->pluck('value', 'key');
-
-            return Inertia::render('Settings/Index', ['settings' => $settings]);
+            $notificationsLog = NotificationLogs::latest()->paginate(30);
+            $tenants = User::where('type', 'tenant')->select('id', 'name')->orderBy('name')->get();
+    
+            return Inertia::render('Settings/Index', ['settings' => $settings, 'notifications' => $notificationsLog, 'tenants'=> $tenants]);
         } catch (\Throwable $e) {
             Log::error('Failed to load settings: ' . $e->getMessage());
             return response()->json(['error' => 'Unable to fetch settings.'], 500);
