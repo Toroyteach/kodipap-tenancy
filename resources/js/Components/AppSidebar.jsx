@@ -13,7 +13,7 @@ const menuItems = [
     { title: "Tenants", href: route('tenants.index'), icon: Users, name: 'tenants.index' },
     { title: "Payments", href: route('payments.index'), icon: CreditCard, name: 'payments.index' },
     { title: "Reports", href: route('reports.index'), icon: FileText, name: 'reports.index' },
-    { title: "Settings", href: route('settings'), icon: Settings, name: 'settings' },
+    { title: "Settings", href: route('settings.index'), icon: Settings, name: 'settings' },
 ];
 
 export default function AppSidebar() {

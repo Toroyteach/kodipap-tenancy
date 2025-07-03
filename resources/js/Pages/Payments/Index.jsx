@@ -32,19 +32,6 @@ export default function PaymentsIndex() {
         return method === 'M-Pesa' ? Smartphone : CreditCard;
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'failed':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
-
     return (
         <div className="p-6">
             <Head title="Payments" />
@@ -52,13 +39,6 @@ export default function PaymentsIndex() {
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">Payments</h1>
                 <div className="flex items-center gap-2">
-                    <input
-                        type="text"
-                        placeholder="Search..."
-                        className="border px-2 py-1 rounded"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
                     <Button variant="outline">
                         <Download className="w-4 h-4 mr-2" />
                         Export

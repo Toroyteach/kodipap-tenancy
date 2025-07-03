@@ -61,12 +61,25 @@ class DashboardController extends Controller
     
             // Monthly collections (last 6 full months relative to $now)
             $monthlyCollections = collect();
-            for ($i = 6; $i >= 1; $i--) { // Loop from 6 months ago up to 1 month ago (last full month)
+
+            for ($i = 6; $i >= 1; $i--) {
                 $start = $now->copy()->subMonths($i)->startOfMonth();
                 $end = $now->copy()->subMonths($i)->endOfMonth();
+            
+                // Collected amount in the month
+                $collected = Payment::whereBetween('payment_date', [$start, $end])->sum('amount');
+            
+                // Expected target: sum of rent_amount for leases active during this month
+                $target = \App\Models\Lease::where(function ($q) use ($start, $end) {
+                    $q->whereDate('start_date', '<=', $end)
+                      ->whereDate('end_date', '>=', $start)
+                      ->orWhereNull('end_date');
+                })->sum('rent_amount');
+            
                 $monthlyCollections->push([
                     'month' => $start->format('M Y'),
-                    'amount' => Payment::whereBetween('payment_date', [$start, $end])->sum('amount'),
+                    'amount' => $collected,
+                    'target' => $target,
                 ]);
             }
     
