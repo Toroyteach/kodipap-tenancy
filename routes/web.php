@@ -6,9 +6,11 @@ use App\Http\Controllers\TenantController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -53,6 +55,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/property', 'updatePropertySettings')->name('property.update');
         Route::post('/notifications', 'updateNotificationSettings')->name('notifications.update');
         Route::post('/payment', 'updatePaymentSettings')->name('payment.update');
+    });
+
+    //notifications
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::post('/send/type', [NotificationController::class, 'sendByType'])->name('send.type');
+        Route::post('/send/custom', [NotificationController::class, 'sendByCustomMessage'])->name('send.custom');
+        Route::post('/send/bulk', [NotificationController::class, 'sendBulkByCustomMessage'])->name('send.bulk');
+        Route::post('/resend/{id}', [NotificationController::class, 'resend'])->name('resend');
     });
 });
 

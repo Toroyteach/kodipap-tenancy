@@ -1,4 +1,10 @@
 import { Head, useForm } from '@inertiajs/react';
+
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/Components/ui/dialog';
+import { Textarea } from '@/Components/ui/textarea';
+import { toast } from 'sonner'
+
 import {
     Bell,
     CreditCard,
@@ -31,7 +37,16 @@ import {
 import { Badge } from '@/Components/ui/badge';
 import AppLayout from '@/Layouts/AppLayout';
 
-export default function SettingsPage({ settings = {}, notifications = [] }) {
+export default function SettingsPage({ settings = {}, notifications = [], tenants }) {
+
+    const [openBulkSms, setOpenBulkSms] = useState(false);
+
+    const bulkSmsForm = useForm({
+        user_ids: [],
+        message: '',
+    });
+
+
     const appData = useForm({
         app_name: settings.app_name || '',
         app_url: settings.app_url || '',
@@ -73,19 +88,19 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
 
     const submit = (form, routeName) => async (e) => {
         e.preventDefault();
-    
+
         const invalid = Object.entries(form.data).some(([_, value]) => {
             return typeof value !== 'boolean' && (!value || value.toString().trim() === '');
         });
-    
+
         if (invalid) {
             alert('Please fill all required fields correctly before submitting.');
             return;
         }
-    
+
         const confirmed = confirm('Are you sure you want to save these settings?');
         if (!confirmed) return;
-    
+
         form.post(route(routeName), {
             preserveScroll: true,
             onError: () => alert('Validation failed. Please check the inputs.'),
@@ -143,7 +158,32 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
             <Switch id={name} checked={form.data[name]} onCheckedChange={(checked) => form.setData(name, checked)} />
         </div>
     );
-    
+
+    const sendBulkSms = (e) => {
+        e.preventDefault();
+        bulkSmsForm.post(route('notifications.send.bulk'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setOpenBulkSms(false);
+                bulkSmsForm.reset();
+                toast.success('Bulk SMS queued');
+            },
+            onError: () => {
+                toast.error('Failed to send bulk SMS.');
+            },
+        });
+    };
+
+    const resendNotification = (id) => {
+        if (!confirm('Re-send this failed notification?')) return;
+
+        router.visit(route('notifications.resend', id), {
+            method: 'post',
+            preserveScroll: true,
+            onSuccess: () => toast.success('Notification requeued.'),
+            onError: () => toast.error('Failed to requeue notification.'),
+        });
+    };
 
     return (
         <AppLayout>
@@ -153,6 +193,59 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
                     <h1 className="text-2xl font-bold">Settings</h1>
                     <p className="text-muted-foreground">Manage your settings.</p>
                 </div>
+
+                <Button onClick={() => setOpenBulkSms(true)} className="mb-4">Send Bulk SMS</Button>
+
+                <Dialog open={openBulkSms} onOpenChange={setOpenBulkSms}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Send Bulk SMS</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={sendBulkSms} className="space-y-4">
+                            <div>
+                                <Label>Tenants</Label>
+                                <select
+                                    multiple
+                                    value={bulkSmsForm.data.user_ids}
+                                    onChange={(e) =>
+                                        bulkSmsForm.setData(
+                                            'user_ids',
+                                            Array.from(e.target.selectedOptions).map((opt) => opt.value)
+                                        )
+                                    }
+                                    className="w-full h-32 border rounded p-2"
+                                >
+                                    {tenants.map((tenant) => (
+                                        <option key={tenant.id} value={tenant.id}>
+                                            {tenant.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {bulkSmsForm.errors.user_ids && (
+                                    <p className="text-sm text-red-500 mt-1">{bulkSmsForm.errors.user_ids}</p>
+                                )}
+                            </div>
+                            <div>
+                                <Label htmlFor="message">Message</Label>
+                                <Textarea
+                                    id="message"
+                                    maxLength={144}
+                                    value={bulkSmsForm.data.message}
+                                    onChange={(e) => bulkSmsForm.setData('message', e.target.value)}
+                                />
+                                {bulkSmsForm.errors.message && (
+                                    <p className="text-sm text-red-500 mt-1">{bulkSmsForm.errors.message}</p>
+                                )}
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={bulkSmsForm.processing}>
+                                    {bulkSmsForm.processing ? 'Sending...' : 'Send'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
                 <div className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <FormCard title="Application" description="General application settings." form={appData} onSubmit={submit(appData, 'settings.app.update')}>
@@ -222,13 +315,14 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
                                                 </TableCell>
                                                 <TableCell>{new Date(notification.created_at).toLocaleString()}</TableCell>
                                                 <TableCell className="text-right space-x-2">
-                                                    <Button variant="outline" size="sm" disabled={notification.status === 'Pending'}>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={notification.status !== 'failed'}
+                                                        onClick={() => resendNotification(notification.id)}
+                                                    >
                                                         <Send className="h-4 w-4 mr-1" />
                                                         Resend
-                                                    </Button>
-                                                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600" disabled={notification.status !== 'Pending'}>
-                                                        <XCircle className="h-4 w-4 mr-1" />
-                                                        Cancel
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>

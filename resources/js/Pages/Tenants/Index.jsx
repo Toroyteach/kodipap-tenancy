@@ -77,7 +77,18 @@ export default function TenantsIndex({ tenants, filters }) {
     };
 
     const sendReminder = (tenant) => {
-        console.log(`Reminder sent to ${tenant.name}`);
+        post(route('notifications.send.type'), {
+            user_id: tenant.id,
+            type: 'sms_due_reminder',
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Reminder sent to ${tenant.name}`);
+            },
+            onError: () => {
+                toast.error(`Failed to send reminder to ${tenant.name}`);
+            },
+        });
     };
 
     return (
