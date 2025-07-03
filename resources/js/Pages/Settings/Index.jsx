@@ -71,22 +71,24 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
         mpesa_result_url: settings['mpesa.result_url'] || ''
     });
 
-    const securityData = useForm({
-        current_password: '',
-        new_password: '',
-        new_password_confirmation: ''
-    });
-
-    const submit = (form, routeName) => (e) => {
+    const submit = (form, routeName) => async (e) => {
         e.preventDefault();
-        form.post(route(routeName), { preserveScroll: true });
-    };
-
-    const handleSecuritySubmit = (e) => {
-        e.preventDefault();
-        securityData.post(route('password.update'), {
+    
+        const invalid = Object.entries(form.data).some(([_, value]) => {
+            return typeof value !== 'boolean' && (!value || value.toString().trim() === '');
+        });
+    
+        if (invalid) {
+            alert('Please fill all required fields correctly before submitting.');
+            return;
+        }
+    
+        const confirmed = confirm('Are you sure you want to save these settings?');
+        if (!confirmed) return;
+    
+        form.post(route(routeName), {
             preserveScroll: true,
-            onSuccess: () => securityData.reset()
+            onError: () => alert('Validation failed. Please check the inputs.'),
         });
     };
 
@@ -141,6 +143,7 @@ export default function SettingsPage({ settings = {}, notifications = [] }) {
             <Switch id={name} checked={form.data[name]} onCheckedChange={(checked) => form.setData(name, checked)} />
         </div>
     );
+    
 
     return (
         <AppLayout>

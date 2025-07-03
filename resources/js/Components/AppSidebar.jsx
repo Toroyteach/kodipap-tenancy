@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import {
     Sidebar,
     SidebarContent,
@@ -19,13 +20,14 @@ const menuItems = [
 export default function AppSidebar() {
     const { state: sidebarState } = useSidebar();
     const isCollapsed = sidebarState === 'collapsed';
+    const { app_settings } = usePage().props;
 
     return (
         <Sidebar className="flex flex-col border-r bg-gray-50">
             <div className={`flex items-center h-16 border-b px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
                     <Link href={route('dashboard')}>
-                        <h1 className="text-2xl font-bold text-green-600">Kodipap</h1>
+                        <h1 className="text-2xl font-bold text-green-600">{app_settings?.app_name || 'App'}</h1>
                     </Link>
                 )}
             </div>
