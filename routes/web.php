@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TenantController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SettingController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,18 +19,48 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    $user = auth()->user();
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Tenants
+    Route::prefix('tenants')->name('tenants.')->controller(TenantController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{tenant}', 'show')->name('show');
+        Route::post('{lease}/send-reminder', 'sendReminder')->name('send-reminder');
+        Route::post('{lease}/send-receipt', 'sendReceipt')->name('send-receipt');
+        Route::post('{lease}/send-custom-message', 'sendCustomMessage')->name('send-custom-message');
+    });
+
+        // Payments
+        Route::prefix('payments')->name('payments.')->controller(PaymentController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{payment}', 'show')->name('show');
+        });
+
+            // Reports
+    Route::prefix('reports')->name('reports.')->controller(ReportController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('monthly-statement', 'downloadMonthlyStatement')->name('monthly-statement');
+        Route::get('rental-schedule', 'downloadRentalSchedule')->name('rental-schedule');
+        Route::get('tax-report', 'downloadTaxReport')->name('tax-report');
+    });
+
+    Route::prefix('settings')->name('settings.')->controller(SettingController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'update')->name('update');
+        Route::post('send-bulk-message', 'sendBulkMessage')->name('send-bulk-message');
+        Route::post('upload-bulk', 'uploadBulkData')->name('upload-bulk');
+    });
+// Route::get('/dashboard', function () {
+//     $user = auth()->user();
     
-    return Inertia::render('Dashboard', [
-        'user' => [
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->roles ? $user->roles->map->only('name') : [['name' => 'User']]
-        ],
-        'tab' => request()->query('tab', 'overview')
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+//     return Inertia::render('Dashboard', [
+//         'user' => [
+//             'name' => $user->name,
+//             'email' => $user->email,
+//             'roles' => $user->roles ? $user->roles->map->only('name') : [['name' => 'User']]
+//         ],
+//         'tab' => request()->query('tab', 'overview')
+//     ]);
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -47,50 +82,52 @@ Route::middleware('auth')->group(function () {
     ];
 
     // Tenants route
-    Route::get('/tenants', function () use ($tenants) {
-        $filteredTenants = collect($tenants)->when(Request::input('search'), function ($query, $search) {
-            return $query->filter(function ($tenant) use ($search) {
-                return str_contains(strtolower($tenant['name']), strtolower($search)) ||
-                       str_contains(strtolower($tenant['email']), strtolower($search)) ||
-                       str_contains($tenant['phone'], $search) ||
-                       str_contains(strtolower($tenant['unit']), strtolower($search));
-            });
-        })->when(Request::input('status'), function ($query, $status) {
-            return $query->where('status', $status);
-        });
+    // Route::get('/tenants', function () use ($tenants) {
+    //     $filteredTenants = collect($tenants)->when(Request::input('search'), function ($query, $search) {
+    //         return $query->filter(function ($tenant) use ($search) {
+    //             return str_contains(strtolower($tenant['name']), strtolower($search)) ||
+    //                    str_contains(strtolower($tenant['email']), strtolower($search)) ||
+    //                    str_contains($tenant['phone'], $search) ||
+    //                    str_contains(strtolower($tenant['unit']), strtolower($search));
+    //         });
+    //     })->when(Request::input('status'), function ($query, $status) {
+    //         return $query->where('status', $status);
+    //     });
 
-        return Inertia::render('Tenants/Index', [
-            'tenants' => $filteredTenants->values()->all(),
-            'filters' => Request::all('search', 'status'),
-        ]);
-    })->name('tenants.index');
+    //     return Inertia::render('Tenants/Index', [
+    //         'tenants' => $filteredTenants->values()->all(),
+    //         'filters' => Request::all('search', 'status'),
+    //     ]);
+    // })->name('tenants.index');
 
-    Route::get('/tenants/{id}', function ($id) use ($tenants) {
-        $tenant = collect($tenants)->firstWhere('id', $id);
+    // Route::get('/tenants/{id}', function ($id) use ($tenants) {
+    //     $tenant = collect($tenants)->firstWhere('id', $id);
+    //     // dd($tenant);
 
-        if (!$tenant) {
-            abort(404);
-        }
+    //     if (!$tenant) {
+    //         abort(404);
+    //     }
 
-        $allTenantsForSwitcher = collect($tenants)->map(function ($t) {
-            return ['id' => $t['id'], 'name' => $t['name']];
-        });
+    //     $allTenantsForSwitcher = collect($tenants)->map(function ($t) {
+    //         return ['id' => $t['id'], 'name' => $t['name']];
+    //     });
 
-        return Inertia::render('Tenants/Show', [
-            'tenant' => $tenant,
-            'allTenants' => $allTenantsForSwitcher
-        ]);
-    })->name('tenants.show');
+
+    //     return Inertia::render('Tenants/Show', [
+    //         'tenant' => $tenant,
+    //         'allTenants' => $allTenantsForSwitcher
+    //     ]);
+    // })->name('tenants.show');
     
     // Payments route
-    Route::get('/payments', function () {
-        return Inertia::render('Payments/Index');
-    })->name('payments.index');
+    // Route::get('/payments', function () {
+    //     return Inertia::render('Payments/Index');
+    // })->name('payments.index');
     
     // Reports route
-    Route::get('/reports', function () {
-        return Inertia::render('Reports/Index');
-    })->name('reports.index');
+    // Route::get('/reports', function () {
+    //     return Inertia::render('Reports/Index');
+    // })->name('reports.index');
     
     // Settings routes
     Route::get('/settings/{tab?}', function ($tab = 'profile') {
@@ -103,18 +140,18 @@ Route::middleware('auth')->group(function () {
     
 });
 
-Route::get('/settings', function () {
-    // Sample notifications data (replace with data from your database)
-    $notifications = [
-        ['id' => 1, 'message' => 'Rent reminder for Unit A101', 'status' => 'Sent', 'created_at' => '2024-06-28 10:00:00'],
-        ['id' => 2, 'message' => 'Overdue balance notice for Jane Smith', 'status' => 'Sent', 'created_at' => '2024-06-27 15:30:00'],
-        ['id' => 3, 'message' => 'Bulk message: Maintenance scheduled for tomorrow', 'status' => 'Failed', 'created_at' => '2024-06-26 11:00:00'],
-        ['id' => 4, 'message' => 'Welcome message to new tenant Chris Lee', 'status' => 'Pending', 'created_at' => '2024-06-25 09:00:00'],
-    ];
+// Route::get('/settings', function () {
+//     // Sample notifications data (replace with data from your database)
+//     $notifications = [
+//         ['id' => 1, 'message' => 'Rent reminder for Unit A101', 'status' => 'Sent', 'created_at' => '2024-06-28 10:00:00'],
+//         ['id' => 2, 'message' => 'Overdue balance notice for Jane Smith', 'status' => 'Sent', 'created_at' => '2024-06-27 15:30:00'],
+//         ['id' => 3, 'message' => 'Bulk message: Maintenance scheduled for tomorrow', 'status' => 'Failed', 'created_at' => '2024-06-26 11:00:00'],
+//         ['id' => 4, 'message' => 'Welcome message to new tenant Chris Lee', 'status' => 'Pending', 'created_at' => '2024-06-25 09:00:00'],
+//     ];
 
-    return Inertia::render('Settings/Index', [
-        'notifications' => $notifications,
-    ]);
-})->name('settings.index');
+//     return Inertia::render('Settings/Index', [
+//         'notifications' => $notifications,
+//     ]);
+// })->name('settings.index');
 
 require __DIR__.'/auth.php';

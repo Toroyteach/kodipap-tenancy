@@ -1,9 +1,8 @@
 import React from 'react';
 import AppLayout from '@/Layouts/AppLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
-import { DollarSign, Users, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { DollarSign, Users, AlertTriangle, ArrowUpRight, Calendar } from 'lucide-react';
 import PaymentChart from '@/Components/PaymentChart';
 import RecentPayments from '@/Components/RecentPayments';
 
@@ -23,40 +22,42 @@ const StatCard = ({ title, value, change, icon: Icon, changeColor, iconBg, iconC
 );
 
 export default function Dashboard() {
-    const stats = [
+    const { stats, monthly_collections, recent_payments } = usePage().props;
+
+    const statCards = [
         {
             title: 'Total Collections',
-            value: 'KSH 450,000',
-            change: '+12.5% from last month',
+            value: `KSH ${Number(stats.total_collections).toLocaleString()}`,
+            // change: `${stats.collections_change >= 0 ? '+' : ''}${stats.collections_change}% from last month`,
             icon: DollarSign,
-            changeColor: 'text-green-500',
+            // changeColor: stats.collections_change >= 0 ? 'text-green-500' : 'text-red-500',
             iconBg: 'bg-green-100',
             iconColor: 'text-green-600',
         },
         {
             title: 'Active Tenants',
-            value: '24',
-            change: '+2 from last month',
+            value: stats.active_tenants,
+            change: `${stats.tenants_change >= 0 ? '+' : ''}${stats.tenants_change} from last month`,
             icon: Users,
-            changeColor: 'text-green-500',
+            changeColor: stats.tenants_change >= 0 ? 'text-green-500' : 'text-red-500',
             iconBg: 'bg-blue-100',
             iconColor: 'text-blue-600',
         },
         {
             title: 'Pending Payments',
-            value: 'KSH 85,000',
-            change: '-8.3% from last month',
+            value: `KSH ${Number(stats.pending_payments).toLocaleString()}`,
+            change: `${stats.pending_change >= 0 ? '+' : ''}${stats.pending_change}% from last month`,
             icon: AlertTriangle,
-            changeColor: 'text-red-500',
+            changeColor: stats.pending_change >= 0 ? 'text-orange-600' : 'text-red-500',
             iconBg: 'bg-orange-100',
             iconColor: 'text-orange-600',
         },
         {
             title: 'This Month',
-            value: 'KSH 125,000',
-            change: '+15.2% from last month',
+            value: `KSH ${Number(stats.last_month_total_collections).toLocaleString()}`,
+            change: `${stats.collections_change >= 0 ? '+' : ''}${stats.collections_change}% from last month`,
             icon: ArrowUpRight,
-            changeColor: 'text-green-500',
+            changeColor: stats.collections_change >= 0 ? 'text-green-500' : 'text-red-500',
             iconBg: 'bg-green-100',
             iconColor: 'text-green-600',
         },
@@ -71,13 +72,19 @@ export default function Dashboard() {
                         <h1 className="text-2xl font-bold">Dashboard</h1>
                         <p className="text-muted-foreground">Welcome back, here's what's happening with your properties</p>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                        Tuesday, 1 July 2025
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4" />
+                        {new Date().toLocaleDateString('en-KE', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
                     </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {stats.map((stat, index) => (
+                    {statCards.map((stat, index) => (
                         <StatCard key={index} {...stat} />
                     ))}
                 </div>
@@ -88,12 +95,12 @@ export default function Dashboard() {
                             <p className="text-sm text-muted-foreground">Collection performance vs targets</p>
                         </CardHeader>
                         <CardContent>
-                            <PaymentChart />
+                            <PaymentChart data={monthly_collections} />
                         </CardContent>
                     </Card>
                     <Card className="lg:col-span-3">
                         <CardContent>
-                            <RecentPayments />
+                            <RecentPayments payments={recent_payments} />
                         </CardContent>
                     </Card>
                 </div>

@@ -1,48 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AppLayout from '@/Layouts/AppLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { 
-    Search, 
-    Plus, 
-    MoreVertical, 
-    User, 
-    Phone, 
-    Mail, 
-    Home, 
-    Calendar, 
-    FileText,
+import {
+    Search,
+    Plus,
+    Phone,
+    Mail,
+    Home,
+    Calendar,
     Filter,
-    MapPin,
     AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Badge } from '@/Components/ui/badge';
-import { Checkbox } from '@/Components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/Components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/Components/ui/dialog';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
-
-
-
-const getStatusVariant = (status) => {
-    switch (status) {
-        case 'active':
-            return 'default';
-        case 'overdue':
-            return 'destructive';
-        case 'inactive':
-            return 'outline';
-        default:
-            return 'outline';
-    }
-};
-
-const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('en-US', options);
-};
 
 const debounce = (func, delay) => {
     let timeout;
@@ -53,14 +28,14 @@ const debounce = (func, delay) => {
 };
 
 export default function TenantsIndex({ tenants, filters }) {
-    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [selectedTenants, setSelectedTenants] = useState([]);
     const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
     const debouncedSearch = useCallback(
         debounce(value => {
             router.get(route('tenants.index'), { search: value }, { preserveState: true, replace: true });
-        }, 300), // 300ms delay
+        }, 300),
         []
     );
 
@@ -84,10 +59,31 @@ export default function TenantsIndex({ tenants, filters }) {
         }
     };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'active':
+                return 'bg-green-100 text-green-800';
+            case 'overdue':
+                return 'bg-red-100 text-red-800';
+            case 'inactive':
+                return 'bg-gray-100 text-gray-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    const sendReceipt = (tenant) => {
+        console.log(`Receipt sent to ${tenant.name}`);
+    };
+
+    const sendReminder = (tenant) => {
+        console.log(`Reminder sent to ${tenant.name}`);
+    };
+
     return (
         <div className="space-y-6 p-6">
             <Head title="Tenants" />
-            
+
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
@@ -116,7 +112,6 @@ export default function TenantsIndex({ tenants, filters }) {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsMessageDialogOpen(false)}>Cancel</Button>
                         <Button onClick={() => {
-                            // Handle message sending logic here
                             console.log('Sending message to:', selectedTenants);
                             setIsMessageDialogOpen(false);
                             setSelectedTenants([]);
@@ -155,128 +150,94 @@ export default function TenantsIndex({ tenants, filters }) {
                         </div>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th scope="col" className="p-4">
-                                        <Checkbox 
-                                            id="select-all"
-                                            onCheckedChange={handleSelectAll}
-                                            checked={selectedTenants.length === tenants.length && tenants.length > 0}
-                                        />
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Tenant
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Unit
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Rent
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Last Payment
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Due Date
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col" className="relative px-6 py-3">
-                                        <span className="sr-only">Actions</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {tenants.map((tenant) => (
-                                    <tr key={tenant.id} className={`hover:bg-gray-50 ${selectedTenants.includes(tenant.id) ? 'bg-blue-50' : ''}`}>
-                                        <td className="p-4">
-                                            <Checkbox 
-                                                id={`select-${tenant.id}`}
-                                                onCheckedChange={(checked) => handleSelectTenant(tenant.id, checked)}
-                                                checked={selectedTenants.includes(tenant.id)}
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Link href={route('tenants.show', tenant.id)} className="flex items-center group">
-                                                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-medium group-hover:bg-green-200 transition-colors">
-                                                    {tenant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                                                </div>
-                                                <div className="ml-4">
-                                                    <div className="text-sm font-medium text-gray-900 group-hover:text-green-600 transition-colors">{tenant.name}</div>
-                                                    <div className="text-sm text-gray-500">{tenant.phone}</div>
-                                                </div>
-                                            </Link>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <Home className="h-4 w-4 text-gray-400 mr-2" />
-                                                <span className="text-sm text-gray-900">{tenant.unit}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">KSH {tenant.rent?.toLocaleString()}</div>
-                                            <div className="text-xs text-gray-500">Monthly</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{formatDate(tenant.lastPayment)}</div>
-                                            <div className="text-xs text-gray-500">
-                                                {tenant.balance === 0 ? (
-                                                    <span className="text-green-600">Paid in full</span>
-                                                ) : (
-                                                    <span className="text-red-600">Balance: KSH {tenant.balance?.toLocaleString()}</span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                                                <span className="text-sm text-gray-900">{formatDate(tenant.dueDate)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Badge variant={getStatusVariant(tenant.status)}>
-                                                {tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}
+                    <div className="space-y-4">
+                        {tenants.map((tenant, index) => (
+                            <div
+                                key={`${tenant.id}-${index}`}
+                                className="p-6 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="font-semibold text-gray-900">{tenant.name}</h3>
+                                            <Badge variant="secondary" className={getStatusColor(tenant.status)}>
+                                                {tenant.status}
                                             </Badge>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button className="text-gray-400 hover:text-gray-600">
-                                                <MoreVertical className="h-5 w-5" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            {tenant.status === 'overdue' && (
+                                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-500">
+                                            <div className="flex items-center gap-2">
+                                                <Home className="w-4 h-4" />
+                                                {tenant.property}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Phone className="w-4 h-4" />
+                                                {tenant.phone}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Mail className="w-4 h-4" />
+                                                {tenant.email}
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-4 h-4" />
+                                                Due: {tenant.due ? new Date(tenant.due).toLocaleDateString('en-KE') : '—'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <p className="text-sm text-gray-500">Monthly Rent</p>
+                                        <p className="text-lg font-semibold text-gray-900">
+                                            KSH {tenant.monthly_rent?.toLocaleString()}
+                                        </p>
+                                        {tenant.balance > 0 && (
+                                            <p className="text-sm text-red-600 font-medium">
+                                                Outstanding: KSH {tenant.balance.toLocaleString()}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                                    <p className="text-sm text-gray-500">
+                                        Last payment:{' '}
+                                        {tenant.last_payment
+                                            ? new Date(tenant.last_payment).toLocaleDateString('en-KE')
+                                            : '—'}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Link href={`/tenants/${tenant.id}`}>
+                                            <Button variant="outline" size="sm" onClick={() => router.visit(`/tenants/${tenant.id}`)}>
+                                                View Details
+                                            </Button>
+                                        </Link>
+                                        <Button variant="outline" size="sm" onClick={() => sendReceipt(tenant)}>
+                                            Send Receipt
+                                        </Button>
+                                        {tenant.status === 'overdue' && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-red-600 border-red-200 hover:bg-red-50"
+                                                onClick={() => sendReminder(tenant)}
+                                            >
+                                                Send Reminder
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    
-                    {tenants.length === 0 && (
-                        <div className="text-center py-12">
-                            <div className="mx-auto h-12 w-12 text-gray-400">
-                                <User className="h-full w-full" />
-                            </div>
-                            <h3 className="mt-2 text-sm font-medium text-gray-900">No tenants found</h3>
-                            <p className="mt-1 text-sm text-gray-500">
-                                {searchTerm ? 'Try a different search term' : 'Get started by adding a new tenant'}
-                            </p>
-                            <div className="mt-6">
-                                <Button className="bg-green-600 hover:bg-green-700">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Tenant
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
         </div>
     );
 }
 
-// Set the layout for this page
-TenantsIndex.layout = page => <AppLayout title="Tenants" children={page} />;
-
+TenantsIndex.layout = page => <AppLayout title="Tenants">{page}</AppLayout>;
