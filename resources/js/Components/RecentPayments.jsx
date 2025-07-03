@@ -1,51 +1,16 @@
 import React from 'react';
+import { usePage, Link } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { CreditCard, Smartphone } from 'lucide-react';
 
 const RecentPayments = () => {
-  const payments = [
-    {
-      id: '1',
-      tenant: 'Mary Wanjiku',
-      unit: 'Unit A-101',
-      amount: 25000,
-      method: 'M-Pesa',
-      status: 'completed',
-      date: '2024-01-15 at 14:30'
-    },
-    {
-      id: '2',
-      tenant: 'James Mwangi',
-      unit: 'Unit B-205',
-      amount: 30000,
-      method: 'Bank',
-      status: 'completed',
-      date: '2024-01-15 at 10:15'
-    },
-    {
-      id: '3',
-      tenant: 'Grace Akinyi',
-      unit: 'Unit C-302',
-      amount: 22000,
-      method: 'M-Pesa',
-      status: 'pending',
-      date: '2024-01-15 at 09:45'
-    },
-    {
-      id: '4',
-      tenant: 'Peter Otieno',
-      unit: 'Unit A-104',
-      amount: 28000,
-      method: 'Bank',
-      status: 'completed',
-      date: '2024-01-14 at 16:20'
-    }
-  ];
+  const { recent_payments } = usePage().props;
 
   const getPaymentIcon = (method) => {
-    switch (method.toLowerCase()) {
+    switch ((method || '').toLowerCase()) {
+      case 'mpesa':
       case 'm-pesa':
         return <Smartphone className="h-6 w-6 text-green-500" />;
       case 'bank':
@@ -55,16 +20,10 @@ const RecentPayments = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-    switch (status) {
-      case 'completed':
-        return <Badge variant="default">{statusText}</Badge>;
-      case 'pending':
-        return <Badge variant="warning">{statusText}</Badge>;
-      default:
-        return <Badge variant="outline">{statusText}</Badge>;
-    }
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString('en-KE')} at ${date.toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
   return (
@@ -74,22 +33,25 @@ const RecentPayments = () => {
           <CardTitle className="text-lg font-semibold text-gray-900">Recent Payments</CardTitle>
           <p className="text-sm text-gray-500">Latest rent collections</p>
         </div>
-        <Button variant="outline" size="sm">View All</Button>
+        <Link href="/payments">
+          <Button variant="outline" size="sm">View All</Button>
+        </Link>
       </CardHeader>
       <CardContent>
         <ul className="space-y-4">
-          {payments.map((payment) => (
+          {recent_payments?.map((payment) => (
             <li key={payment.id} className="flex items-center space-x-4">
               <div className="p-2 bg-gray-100 rounded-md">
                 {getPaymentIcon(payment.method)}
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-gray-800">{payment.tenant}</p>
-                <p className="text-sm text-gray-500">{`${payment.unit}, ${payment.date}`}</p>
+                <p className="font-semibold text-gray-800">{payment.lease?.tenant?.name || 'Unknown Tenant'}</p>
+                <p className="text-sm text-gray-500">
+                  {`${payment.lease?.unit?.unit_number || 'N/A'}, ${formatDateTime(payment.payment_date)}`}
+                </p>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-gray-800">{`KSH ${payment.amount.toLocaleString()}`}</p>
-                {getStatusBadge(payment.status)}
+                <p className="font-semibold text-gray-800">KSH {Number(payment.amount).toLocaleString()}</p>
               </div>
             </li>
           ))}
