@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Lease;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Models\NotificationLogs;
 use App\Jobs\SendTenantNotification;
+use App\Http\Requests\CreateLeaseRequest;
 
 class TenantController extends Controller
 {
@@ -154,5 +156,39 @@ class TenantController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    // GET: Units + Users available for lease
+    public function leaseFormData()
+    {
+        $availableUnits = Unit::doesntHave('lease')
+            ->where('status', 'available')
+            ->select('id', 'unit_number')
+            ->get();
+
+        $users = User::where('type', 'tenant')->select('id', 'name')->get();
+
+        return back()->with([
+            'units' => $availableUnits,
+            'users' => $users,
+        ]);
+    }
+
+    // POST: Create lease
+    public function createLease(CreateLeaseRequest $request)
+    {
+        $validated = $request->validated();
+
+        $lease = Lease::create([
+            'user_id' => $validated['user_id'],
+            'unit_id' => $validated['unit_id'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'rent_amount' => $validated['rent_amount'],
+            'deposit_amount' => $validated['deposit_amount'] ?? 0,
+            'status' => 'active',
+        ]);
+
+        return back()->with(['message' => 'Lease created', 'lease' => $lease]);
     }
 }

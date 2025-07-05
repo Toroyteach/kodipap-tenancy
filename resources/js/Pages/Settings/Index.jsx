@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/Components/ui/dialog';
 import { Textarea } from '@/Components/ui/textarea';
-import { toast } from 'sonner'
+import { toast } from 'react-toastify';
 
 import {
     Bell,
@@ -11,7 +11,6 @@ import {
     Home,
     Save,
     Send,
-    XCircle
 } from 'lucide-react';
 
 import { Button } from '@/Components/ui/button';
@@ -88,22 +87,30 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
 
     const submit = (form, routeName) => async (e) => {
         e.preventDefault();
-
+    
         const invalid = Object.entries(form.data).some(([_, value]) => {
             return typeof value !== 'boolean' && (!value || value.toString().trim() === '');
         });
-
+    
         if (invalid) {
-            alert('Please fill all required fields correctly before submitting.');
+            toast.error('Please fill all required fields correctly.');
             return;
         }
-
+    
         const confirmed = confirm('Are you sure you want to save these settings?');
         if (!confirmed) return;
-
+    
         form.post(route(routeName), {
             preserveScroll: true,
-            onError: () => alert('Validation failed. Please check the inputs.'),
+            onSuccess: () => {
+                toast.success('Settings updated successfully.');
+            },
+            onError: () => {
+                toast.error('Validation failed. Please check your inputs.');
+            },
+            onFinish: () => {
+                // Optionally handle cleanup if needed
+            },
         });
     };
 
@@ -144,8 +151,15 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
     const FormInput = ({ form, name, label, type = 'text' }) => (
         <div className="space-y-2">
             <Label htmlFor={name}>{label}</Label>
-            <Input id={name} type={type} value={form.data[name]} onChange={(e) => form.setData(name, e.target.value)} />
-            {form.errors[name] && <p className="text-sm text-red-500 mt-1">{form.errors[name]}</p>}
+            <Input
+                id={name}
+                type={type}
+                value={form.data[name] ?? ''}
+                onChange={(e) => form.setData(name, e.target.value)}
+            />
+            {form.errors[name] && (
+                <p className="text-sm text-red-500 mt-1">{form.errors[name]}</p>
+            )}
         </div>
     );
 
@@ -189,12 +203,13 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
         <AppLayout>
             <Head title="Settings" />
             <div>
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p className="text-muted-foreground">Manage your settings.</p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">Settings</h1>
+                        <p className="text-muted-foreground">Manage your settings.</p>
+                    </div>
+                    <Button onClick={() => setOpenBulkSms(true)}>Send Bulk SMS</Button>
                 </div>
-
-                <Button onClick={() => setOpenBulkSms(true)} className="mb-4">Send Bulk SMS</Button>
 
                 <Dialog open={openBulkSms} onOpenChange={setOpenBulkSms}>
                     <DialogContent>
@@ -246,7 +261,7 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
                     </DialogContent>
                 </Dialog>
 
-                <div className="space-y-8">
+                <div className="space-y-2">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <FormCard title="Application" description="General application settings." form={appData} onSubmit={submit(appData, 'settings.app.update')}>
                             <FormInput form={appData} name="app_name" label="App Name" />

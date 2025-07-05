@@ -18,7 +18,9 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
-        return Inertia::render('Profile/Edit', [
+        $componentPrefix = tenancy()->initialized ? 'Profile/Edit' : 'Multitenancy/Settings/profile';
+
+        return Inertia::render($componentPrefix, [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
         ]);

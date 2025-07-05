@@ -16,8 +16,10 @@ import { Button } from '@/Components/ui/button';
 import { Input } from '@/Components/ui/input';
 import { Badge } from '@/Components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/Components/ui/dialog';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Label } from '@/Components/ui/label';
 import { Textarea } from '@/Components/ui/textarea';
+import { toast } from 'react-toastify';
 
 const debounce = (func, delay) => {
     let timeout;
@@ -31,6 +33,16 @@ export default function TenantsIndex({ tenants, filters }) {
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
     const [selectedTenants, setSelectedTenants] = useState([]);
     const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+    const [isLeaseDialogOpen, setIsLeaseDialogOpen] = useState(false);
+    const [leaseForm, setLeaseForm] = useState({
+        user_id: '',
+        unit_id: '',
+        start_date: '',
+        end_date: '',
+        rent_amount: '',
+        deposit_amount: '',
+    });
+    const [formOptions, setFormOptions] = useState({ users: [], units: [] });
 
     const debouncedSearch = useCallback(
         debounce(value => {
@@ -90,6 +102,25 @@ export default function TenantsIndex({ tenants, filters }) {
             },
         });
     };
+    const openLeaseDialog = () => {
+        router.get('/lease-form-data', {}, {
+            onSuccess: (page) => {
+                const users = page.users ?? [];
+                const units = page.units ?? [];
+
+                if (users.length === 0 || units.length === 0) {
+                    toast.error('No tenants or available units found.');
+                    return;
+                }
+
+                setFormOptions({ users, units });
+                setIsLeaseDialogOpen(true);
+            },
+            onError: () => {
+                toast.error('Failed to load form options');
+            }
+        });
+    };
 
     return (
         <div className="space-y-6 p-6">
@@ -100,11 +131,59 @@ export default function TenantsIndex({ tenants, filters }) {
                     <h1 className="text-2xl font-bold text-gray-900">Tenants</h1>
                     <p className="text-gray-500">Manage your tenants and their information</p>
                 </div>
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={openLeaseDialog}>
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Tenant
+                    Assign Lease
                 </Button>
             </div>
+
+            <Dialog open={isLeaseDialogOpen} onOpenChange={setIsLeaseDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign New Lease</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <Select onValueChange={val => setLeaseForm({ ...leaseForm, user_id: val })}>
+                            <SelectTrigger><SelectValue placeholder="Select Tenant" /></SelectTrigger>
+                            <SelectContent>
+                                {formOptions.users.map(user => (
+                                    <SelectItem key={user.id} value={user.id.toString()}>
+                                        {user.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Select onValueChange={val => setLeaseForm({ ...leaseForm, unit_id: val })}>
+                            <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
+                            <SelectContent>
+                                {formOptions.units.map(unit => (
+                                    <SelectItem key={unit.id} value={unit.id.toString()}>
+                                        Unit {unit.unit_number}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Input type="date" onChange={e => setLeaseForm({ ...leaseForm, start_date: e.target.value })} />
+                        <Input type="date" onChange={e => setLeaseForm({ ...leaseForm, end_date: e.target.value })} />
+                        <Input placeholder="Monthly Rent" type="number" onChange={e => setLeaseForm({ ...leaseForm, rent_amount: e.target.value })} />
+                        <Input placeholder="Deposit (optional)" type="number" onChange={e => setLeaseForm({ ...leaseForm, deposit_amount: e.target.value })} />
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => {
+                            router.post('/tenants/create-lease', leaseForm, {
+                                onSuccess: () => {
+                                    toast.success('Lease created');
+                                    setIsLeaseDialogOpen(false);
+                                    router.reload();
+                                },
+                                onError: () => {
+                                    toast.error('Failed to create lease');
+                                },
+                            });
+                        }}>Submit</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
                 <DialogContent>
