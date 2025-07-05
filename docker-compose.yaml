@@ -3,7 +3,7 @@ services:
     image: mysql:5.7
     platform: linux/x86_64
     ports:
-      - "330011:3306"
+      - "33011:3306"
     container_name: mysql-kodipap
     restart: unless-stopped
     environment:

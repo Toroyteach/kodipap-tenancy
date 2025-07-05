@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
+use Stancl\Tenancy\Middleware\InitializeTenancyByPath;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use App\Http\Controllers\ProfileController;
@@ -30,7 +30,7 @@ use Inertia\Inertia;
 
 Route::middleware([
     'web',
-    InitializeTenancyByDomain::class,
+    InitializeTenancyByPath::class,
     PreventAccessFromCentralDomains::class,
     CheckTenantForMaintenanceMode::class
 ])->group(function () {
