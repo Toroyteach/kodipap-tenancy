@@ -4,8 +4,6 @@ set -e
 
 cp .env.example .env
 
-composer dump-autoload
-
 echo "Generating application key..."
 php artisan key:generate --force
 

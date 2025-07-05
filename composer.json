@@ -33,7 +33,9 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "App\\": "app/",
+            "Database\\Seeders\\": "database/seeders/"
         }
     },
     "scripts": {
