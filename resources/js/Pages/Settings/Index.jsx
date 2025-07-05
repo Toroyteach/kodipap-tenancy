@@ -11,7 +11,6 @@ import {
     Home,
     Save,
     Send,
-    XCircle
 } from 'lucide-react';
 
 import { Button } from '@/Components/ui/button';
@@ -189,12 +188,13 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
         <AppLayout>
             <Head title="Settings" />
             <div>
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold">Settings</h1>
-                    <p className="text-muted-foreground">Manage your settings.</p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">Settings</h1>
+                        <p className="text-muted-foreground">Manage your settings.</p>
+                    </div>
+                    <Button onClick={() => setOpenBulkSms(true)}>Send Bulk SMS</Button>
                 </div>
-
-                <Button onClick={() => setOpenBulkSms(true)} className="mb-4">Send Bulk SMS</Button>
 
                 <Dialog open={openBulkSms} onOpenChange={setOpenBulkSms}>
                     <DialogContent>
@@ -246,7 +246,7 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
                     </DialogContent>
                 </Dialog>
 
-                <div className="space-y-8">
+                <div className="space-y-2">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <FormCard title="Application" description="General application settings." form={appData} onSubmit={submit(appData, 'settings.app.update')}>
                             <FormInput form={appData} name="app_name" label="App Name" />

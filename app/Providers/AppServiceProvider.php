@@ -26,7 +26,10 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         Inertia::share('app_settings', function () {
-            return Setting::whereIn('key', ['app_name'])->pluck('value', 'key');
+            if (tenancy()->initialized && tenancy()->tenant) {
+                return Setting::whereIn('key', ['app_name'])->pluck('value', 'key');
+            }
+            return null;
         });
     }
 }
