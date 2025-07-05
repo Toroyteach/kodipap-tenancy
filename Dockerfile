@@ -38,7 +38,7 @@ RUN chown -R www-data:www-data /var/www/ \
     && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 # # Expose port
-EXPOSE 8093
+EXPOSE 8094
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

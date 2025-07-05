@@ -20,4 +20,4 @@ php artisan view:clear
 php artisan config:cache
 
 echo "Starting PHP-FPM server..."
-php artisan serve --host=0.0.0.0 --port=8093
+php artisan serve --host=0.0.0.0 --port=8094
