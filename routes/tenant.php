@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Stancl\Tenancy\Middleware\CheckTenantForMaintenanceMode;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TenantController;
@@ -31,6 +32,7 @@ Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
+    CheckTenantForMaintenanceMode::class
 ])->group(function () {
     Route::get('/', function () {
         return Inertia::render('Welcome', [
@@ -46,12 +48,15 @@ Route::middleware([
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
         // Tenants
+        Route::get('lease-form-data', [TenantController::class, 'leaseFormData']);
+        //TODO: change the names of the routes
         Route::prefix('tenants')->name('tenants.')->controller(TenantController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('{tenant}', 'show')->name('show');
             Route::post('{lease}/send-reminder', 'sendReminder')->name('send-reminder');
             Route::post('{lease}/send-receipt', 'sendReceipt')->name('send-receipt');
             Route::post('{lease}/send-custom-message', 'sendCustomMessage')->name('send-custom-message');
+            Route::post('create-lease', [TenantController::class, 'createLease']);
         });
         
         // Payments

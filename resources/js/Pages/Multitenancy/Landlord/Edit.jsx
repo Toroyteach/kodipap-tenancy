@@ -54,7 +54,15 @@ export default function EditTenant() {
                 '⚠️ WARNING: Deleting this tenant will remove all associated data and database. This action is irreversible.\n\nAre you sure you want to continue?'
             )
         ) {
-            router.delete(`/system-landlord/clients/${tenant.id}`);
+            router.delete(`/system-landlord/clients/${tenant.id}`, {
+                onSuccess: () => {
+                    router.get('/system-landlord/clients');
+                    // toast.success('Tenant deleted successfully.');
+                },
+                onError: () => {
+                    toast.error('Failed to delete tenant. Please try again.');
+                },
+            });
         }
     };
 

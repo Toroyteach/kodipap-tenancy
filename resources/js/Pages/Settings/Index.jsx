@@ -3,7 +3,7 @@ import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/Components/ui/dialog';
 import { Textarea } from '@/Components/ui/textarea';
-import { toast } from 'sonner'
+import { toast } from 'react-toastify';
 
 import {
     Bell,
@@ -87,22 +87,30 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
 
     const submit = (form, routeName) => async (e) => {
         e.preventDefault();
-
+    
         const invalid = Object.entries(form.data).some(([_, value]) => {
             return typeof value !== 'boolean' && (!value || value.toString().trim() === '');
         });
-
+    
         if (invalid) {
-            alert('Please fill all required fields correctly before submitting.');
+            toast.error('Please fill all required fields correctly.');
             return;
         }
-
+    
         const confirmed = confirm('Are you sure you want to save these settings?');
         if (!confirmed) return;
-
+    
         form.post(route(routeName), {
             preserveScroll: true,
-            onError: () => alert('Validation failed. Please check the inputs.'),
+            onSuccess: () => {
+                toast.success('Settings updated successfully.');
+            },
+            onError: () => {
+                toast.error('Validation failed. Please check your inputs.');
+            },
+            onFinish: () => {
+                // Optionally handle cleanup if needed
+            },
         });
     };
 
@@ -143,8 +151,15 @@ export default function SettingsPage({ settings = {}, notifications = [], tenant
     const FormInput = ({ form, name, label, type = 'text' }) => (
         <div className="space-y-2">
             <Label htmlFor={name}>{label}</Label>
-            <Input id={name} type={type} value={form.data[name]} onChange={(e) => form.setData(name, e.target.value)} />
-            {form.errors[name] && <p className="text-sm text-red-500 mt-1">{form.errors[name]}</p>}
+            <Input
+                id={name}
+                type={type}
+                value={form.data[name] ?? ''}
+                onChange={(e) => form.setData(name, e.target.value)}
+            />
+            {form.errors[name] && (
+                <p className="text-sm text-red-500 mt-1">{form.errors[name]}</p>
+            )}
         </div>
     );
 

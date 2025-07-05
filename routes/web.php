@@ -17,15 +17,16 @@ Route::middleware(['auth', 'verified'])
         Route::delete('clients/{tenant}', [TenantController::class, 'destroyTenant']);
         Route::post('clients/{tenant}/create-admin', [TenantController::class, 'createTenantAdmin']);
         Route::put('clients/{tenant}/toggle-active', [TenantController::class, 'toggleActive']);
+        Route::post('clients/{tenant}/run-seeder', [TenantController::class, 'runSeeder']);
     });
 
 
 Route::get('/', function () {
-    return redirect()->route(auth()->check() ? 'system.landlord.clients.index' : 'login');
+    return redirect('/system-landlord/clients');
 });
-    
+
 Route::get('/dashboard', function () {
-    return redirect()->route(auth()->check() ? 'system.landlord.clients.index' : 'login');
+    return redirect('/system-landlord/clients');
 });
 
 Route::middleware('auth', 'verified')->group(function () {

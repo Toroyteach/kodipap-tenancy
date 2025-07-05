@@ -94,7 +94,7 @@ class TenantController extends Controller
                 \App\Models\Invoice::class => 'invoices',
                 \App\Models\Payment::class => 'payments',
                 \App\Models\Setting::class => 'settings',
-                \App\Models\NotificationLog::class => 'notification_logs',
+                \App\Models\NotificationLogs::class => 'notification_logs',
             ];
     
             // Get model counts without cache
@@ -110,6 +110,12 @@ class TenantController extends Controller
                     }
                 }
             });
+
+            $isActive = is_null($tenant->maintenance_mode);
+
+            $tenant->setAttribute('is_active', $isActive);
+
+            // dd($tenant->maintenance_mode);
     
             return Inertia::render('Multitenancy/Landlord/Show', [
                 'tenant' => $tenant,
@@ -121,7 +127,7 @@ class TenantController extends Controller
                 'error' => $e->getMessage(),
             ]);
     
-            return response()->json([
+            return back()->withErrors([
                 'message' => 'Failed to load dashboard data.',
                 'error' => $e->getMessage(),
             ], 500);
@@ -193,27 +199,30 @@ class TenantController extends Controller
     {
         try {
             $tenant->delete();
-            return redirect()->route('landlord.tenants.index')->with('success', 'Tenant deleted.');
+            return back()->with('success', 'Tenant deleted.');
         } catch (\Throwable $e) {
             \Log::error('Tenant deletion failed', ['error' => $e->getMessage()]);
             return back()->withErrors(['error' => 'Failed to delete tenant.']);
         }
     }
 
-    public function toggleActive(Tenant $tenant, Tenancy $tenancy)
+    public function toggleActive(Tenant $tenant)
     {
         try {
-            $tenant->is_active = !$tenant->is_active;
-            $tenant->save();
-
-            if (! $tenant->is_active) {
-                // Deactivate tenancy
-                $tenant->putDownForMaintenance();
-            } else {
-                // Re-initialize tenancy
-                $tenant->update(['maintenance_mode' => null]);
-            }
-
+            // $isUnderMaintenance = ! is_null($tenant->maintenance_mode);
+    
+            // dd($tenant->maintenance_mode);
+            $tenant->putDownForMaintenance();
+            // if ($isUnderMaintenance) {
+            //     // Reactivate tenant
+            //     $tenant->update(['maintenance_mode' => null]);
+            // } else {
+            //     // Put tenant into maintenance mode
+            // }
+    
+            // Set computed attribute for frontend (true if not under maintenance)
+            // $tenant->setAttribute('is_active', ! $isUnderMaintenance);
+    
             return back()->with('success', 'Tenant status toggled.');
         } catch (\Throwable $e) {
             return back()->withErrors(['error' => 'Failed to toggle tenant status.']);
@@ -245,10 +254,41 @@ class TenantController extends Controller
         } catch (\Throwable $e) {
 
             \Log::error("Error creating tenant admin for tenant {$tenantId}: " . $e->getMessage());
-            return response()->json([
+            return back()->withErrors([
                 'message' => 'Failed to load dashboard data.',
                 'error' => $e->getMessage(),
             ], 500);
+        } finally {
+            $tenancy->end();
+        }
+    }
+
+    public function runSeeder(Request $request, $tenantId, Tenancy $tenancy)
+    {
+        try {
+            $tenant = Tenant::findOrFail($tenantId);
+            $tenancy->initialize($tenant);
+    
+            // Optional: main tenant seeder class (you can change this)
+            $seederClass = 'Database\\Seeders\\Tenant\\DatabaseSeeder';
+    
+            if (! class_exists($seederClass)) {
+                throw new \RuntimeException("Seeder class {$seederClass} does not exist.");
+            }
+    
+            Artisan::call('db:seed', [
+                '--class' => $seederClass,
+                '--force' => true,
+            ]);
+    
+            return back()->with(['message' => 'Seeder run successfully.']);
+        } catch (\Throwable $e) {
+            \Log::error("Failed to run seeder for tenant {$tenantId}: " . $e->getMessage());
+    
+            return back()->withErrors([
+                'message' => 'Seeder failed.',
+                'error' => $e->getMessage(),
+            ]);
         } finally {
             $tenancy->end();
         }

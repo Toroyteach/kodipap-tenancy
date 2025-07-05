@@ -2,6 +2,7 @@ import Header from '@/Components/Header';
 import AppSidebar from '@/Components/AppSidebar';
 import { SidebarProvider } from '@/Components/ui/sidebar';
 import { usePage } from '@inertiajs/react';
+import { ToastContainer } from 'react-toastify';
 
 export default function AppLayout({ children }) {
     const { auth } = usePage().props;
@@ -16,6 +17,7 @@ export default function AppLayout({ children }) {
                         {children}
                     </main>
                 </div>
+                <ToastContainer position="top-right" autoClose={3000} />
             </div>
         </SidebarProvider>
     );

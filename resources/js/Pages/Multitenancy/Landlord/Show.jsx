@@ -40,6 +40,18 @@ export default function Show({ tenant, modelCounts }) {
         });
     };
 
+    const runSeeder = () => {
+        router.post(`/system-landlord/clients/${tenant.id}/run-seeder`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Seeder executed successfully.');
+            },
+            onError: () => {
+                toast.error('Failed to run seeder.');
+            },
+        });
+    };
+
     return (
         <LandlordLayout>
             <Head title={`Tenant: ${tenant.id}`} />
@@ -75,6 +87,13 @@ export default function Show({ tenant, modelCounts }) {
                         >
                             Create Tenant Admin
                         </button>
+
+                        {/* <button
+                            onClick={() => runSeeder()}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-4"
+                        >
+                            Seed Dummy Data
+                        </button> */}
 
                         {showDialog && (
                             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
