@@ -1,4 +1,4 @@
-import InputError from '@/components/InputError';
+import InputError from '@/Components/InputError';
 import LandlordAppLayout from '@/Layouts/Landlord/landlordlayout';
 import { Transition } from '@headlessui/react';
 import { Head, useForm } from '@inertiajs/react';
