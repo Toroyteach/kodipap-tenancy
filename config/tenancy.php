@@ -18,7 +18,7 @@ return [
     'central_domains' => [
         'kodipap.dmhub.cloud'
         '127.0.0.1',
-        'localhost',
+        'localhost'
     ],
 
     /**
