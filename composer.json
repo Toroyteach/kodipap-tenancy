@@ -35,7 +35,8 @@
         "psr-4": {
             "Tests\\": "tests/",
             "App\\": "app/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Database\\Seeders\\Tenant": "database/seeders/tenant"
         }
     },
     "scripts": {
