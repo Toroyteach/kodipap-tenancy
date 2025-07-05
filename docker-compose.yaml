@@ -1,0 +1,58 @@
+services:
+  db:
+    image: mysql:5.7
+    platform: linux/x86_64
+    ports:
+      - "330011:3306"
+    container_name: mysql-kodipap
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: kodipap_db
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: securepassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel-backend-kodipap
+    restart: unless-stopped
+    tty: true
+    environment:
+      APP_ENV: production
+      APP_KEY:
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8093
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: kodipap_db
+      DB_USERNAME: laravel_user
+      DB_PASSWORD: securepassword
+    volumes:
+      - ./kodipap_storage:/var/www/html
+      - ./logs/php.log:/var/log/fpm-php.www.log
+    ports:
+      - "8093:8093"
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
