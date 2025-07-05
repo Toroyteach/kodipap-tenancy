@@ -4,6 +4,7 @@ set -e
 
 cp .env.example .env
 
+composer dump-autoload
 
 echo "Generating application key..."
 php artisan key:generate --force
@@ -19,8 +20,6 @@ php artisan route:clear
 php artisan cache:clear
 php artisan view:clear
 php artisan config:cache
-
-composer dump-autoload
 
 echo "Starting PHP-FPM server..."
 php artisan serve --host=0.0.0.0 --port=8094
