@@ -20,7 +20,6 @@ Route::middleware(['auth', 'verified'])
         Route::post('clients/{tenant}/run-seeder', [TenantController::class, 'runSeeder']);
     });
 
-
 Route::get('/', function () {
     return redirect('/system-landlord/clients');
 });

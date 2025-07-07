@@ -36,7 +36,7 @@ export default function EditTenant() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-    
+
         put(`/system-landlord/clients/${tenant.id}`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -56,8 +56,8 @@ export default function EditTenant() {
         ) {
             router.delete(`/system-landlord/clients/${tenant.id}`, {
                 onSuccess: () => {
-                    router.get('/system-landlord/clients');
-                    // toast.success('Tenant deleted successfully.');
+                    toast.success('Tenant deleted successfully.');
+                    router.visit('/system-landlord/clients');
                 },
                 onError: () => {
                     toast.error('Failed to delete tenant. Please try again.');

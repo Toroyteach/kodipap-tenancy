@@ -195,14 +195,25 @@ class TenantController extends Controller
         }
     }
 
-    public function destroyTenant(Tenant $tenant)
+    public function destroyTenant(Request $request, Tenant $tenant)
     {
         try {
             $tenant->delete();
-            return back()->with('success', 'Tenant deleted.');
+    
+            if ($request->hasHeader('X-Inertia')) {
+                return redirect('/system-landlord/clients')->with('success', 'Tenant deleted.');
+            }
+    
+            return response()->json(['message' => 'Tenant deleted.']);
+    
         } catch (\Throwable $e) {
             \Log::error('Tenant deletion failed', ['error' => $e->getMessage()]);
-            return back()->withErrors(['error' => 'Failed to delete tenant.']);
+    
+            if ($request->hasHeader('X-Inertia')) {
+                return back()->withErrors(['error' => 'Failed to delete tenant.']);
+            }
+    
+            return response()->json(['error' => 'Failed to delete tenant.'], 500);
         }
     }
 

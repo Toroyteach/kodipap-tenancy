@@ -34,7 +34,7 @@ export default function CreateTenant() {
         post('/system-landlord/clients', {
             preserveScroll: true,
             onSuccess: () => {
-                // router.visit('/landlord/tenants');
+                router.visit('/system-landlord/clients');
                 reset(); 
                 toast.success('Tenant created successfully.');
             },
