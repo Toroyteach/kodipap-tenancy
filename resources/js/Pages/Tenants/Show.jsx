@@ -23,7 +23,7 @@ import { Textarea } from '@/Components/ui/textarea';
 import { Label } from '@/Components/ui/label';
 import { MessageSquare } from 'lucide-react';
 
-export default function TenantShowPage({ tenant, allTenants = [] }) {
+export default function TenantShowPage({ tenant, account, allTenants = [] }) {
     const [isMessageModalOpen, setMessageModalOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({ message: '' });
@@ -106,6 +106,7 @@ export default function TenantShowPage({ tenant, allTenants = [] }) {
                         <p><strong>Name:</strong> {tenant.name}</p>
                         <p><strong>Email:</strong> {tenant.email}</p>
                         <p><strong>Phone:</strong> {tenant.phone || 'N/A'}</p>
+                        <p><strong>Account Bal:</strong> {tenant.phone || 'N/A'}</p>
                         <p><strong>Created At:</strong> {new Date(tenant.created_at).toLocaleString()}</p>
                     </CardContent>
                 </Card>

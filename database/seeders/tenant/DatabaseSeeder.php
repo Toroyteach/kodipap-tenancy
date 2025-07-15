@@ -108,5 +108,9 @@ class DatabaseSeeder extends Seeder
                 }
             }
         }
+
+        $tenants->each(function ($tenant) {
+            Account::factory()->withTenantData($tenant)->create();
+        });
     }
 }
