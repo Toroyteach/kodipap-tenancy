@@ -49,52 +49,62 @@ class MpesaPaymentService
                 throw new Exception('Incomplete MPESA data');
             }
     
-            $lease = Lease::with(['tenant.user', 'unit.property'])
-                ->whereHas('rentalTenant.user', fn($q) => $q->where('phone', $phone))
+            if (Payment::where('transaction_reference', $trx)->exists()) return;
+    
+            $tenant = User::where('phone', $phone)->first();
+            if (!$tenant) throw new Exception("No user found for phone: {$phone}");
+    
+            $lease = Lease::where('user_id', $tenant->id)
+                ->where('status', 'active')
+                ->latest()
                 ->first();
     
-            if (!$lease) throw new Exception("No lease for phone: {$phone}");
+            if (!$lease) throw new Exception("No active lease for phone: {$phone}");
     
-            if (Payment::where('transaction_id', $trx)->exists()) return;
-    
-            Payment::create([
+            $payment = Payment::create([
                 'lease_id' => $lease->id,
                 'amount' => $amount,
-                'transaction_id' => $trx,
-                'status' => 'paid',
-                'paid_at' => now(),
+                'transaction_reference' => $trx,
+                'payment_date' => now(),
                 'method' => 'mpesa',
+                'notes' => 'MPESA STK Callback',
             ]);
     
-            // Apply the payment and update lease details
-            $lease->applyPayment($amount);
+            // Update the tenant's account
+            TenantAccountService::make($tenant)->syncAccount();
     
-            // Notify user
-            $user = $lease->tenant;
+            $account = $tenant->account;
+            $message = '';
     
-            if ($user) {
-                if ($amount >= $lease->monthly_rent) {
-                    $template = settings('sms_payment_thankyou') ?? 'Hello :name, we have received your rent payment of :amount. Thank you!';
+            if ($account) {
+                if ($account->balance > 0) {
+                    $template = settings('sms_payment_thankyou') ?? 'Hi :name, your payment of :amount was received. Your account has credit of :credit.';
                     $message = str_replace(
-                        [':name', ':amount'],
-                        [$user->name, number_format($amount, 2)],
+                        [':name', ':amount', ':credit'],
+                        [$tenant->name, number_format($amount, 2), number_format($account->balance, 2)],
+                        $template
+                    );
+                } elseif ($account->balance < 0) {
+                    $template = settings('sms_payment_partial') ?? 'Hi :name, payment of :amount received. Balance due: :due.';
+                    $message = str_replace(
+                        [':name', ':amount', ':due'],
+                        [$tenant->name, number_format($amount, 2), number_format(abs($account->balance), 2)],
                         $template
                     );
                 } else {
-                    $deficit = number_format($lease->monthly_rent - $amount, 2);
-                    $template = settings('sms_partial_payment') ?? 'Hi :name, you have made a partial payment of :amount. Remaining balance is :balance.';
+                    $template = settings('sms_payment_cleared') ?? 'Hi :name, we received your payment of :amount. Your account is cleared.';
                     $message = str_replace(
-                        [':name', ':amount', ':balance'],
-                        [$user->name, number_format($amount, 2), $deficit],
+                        [':name', ':amount'],
+                        [$tenant->name, number_format($amount, 2)],
                         $template
                     );
                 }
     
-                if (strlen($message) > 146) {
+                if (strlen($message) > 145) {
                     $message = substr($message, 0, 145) . '...';
                 }
     
-                SendTenantNotification::dispatch($user, $message);
+                SendTenantNotification::dispatch($tenant, $message);
             }
         } catch (\Throwable $e) {
             Log::error("MPESA CALLBACK ERROR: " . $e->getMessage());

@@ -99,13 +99,14 @@ class TenantController extends Controller
     public function show($tenantId)
     {
         try {
-            // Load the tenant with leases, units, and payments
+            // Load tenant with leases, units, payments, and account
             $tenant = User::with([
                 'leases.unit',
                 'leases.payments' => fn($q) => $q->latest(),
+                'account',
             ])->findOrFail($tenantId);
     
-            // Get all tenants for the TenantSwitcher dropdown
+            // All tenants for switcher
             $allTenantsForSwitcher = User::where('type', 'tenant')
                 ->select('id', 'name')
                 ->orderBy('name')
@@ -113,6 +114,7 @@ class TenantController extends Controller
     
             return Inertia::render('Tenants/Show', [
                 'tenant' => $tenant,
+                'account' => $tenant->account,
                 'allTenants' => $allTenantsForSwitcher,
             ]);
         } catch (\Throwable $e) {

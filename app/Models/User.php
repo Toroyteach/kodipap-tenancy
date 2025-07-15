@@ -67,4 +67,9 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough(Invoice::class, Lease::class);
     }
+
+    public function account()
+    {
+        return $this->hasOne(Account::class);
+    }
 }

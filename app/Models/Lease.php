@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\TenantAccountService;
 
 class Lease extends Model
 {
@@ -39,5 +40,18 @@ class Lease extends Model
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function applyPayment(float $amount): void
+    {
+        $this->payments()->create([
+            'amount' => $amount,
+            'payment_date' => now(),
+            'method' => 'mpesa',
+            'transaction_reference' => Str::uuid(),
+            'notes' => 'Auto-applied via MPESA',
+        ]);
+
+        TenantAccountService::make($this->tenant)->syncAccount();
     }
 }
